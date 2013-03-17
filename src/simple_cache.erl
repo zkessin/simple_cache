@@ -1,6 +1,16 @@
 -module(simple_cache).
 
--export([insert/2, lookup/1, delete/1]).
+-export([insert/2, lookup/1, delete/1, lookup_or_insert/2]).
+
+lookup_or_insert(Key, ValueFun) ->
+    case lookup(Key) of 
+	{ok, Value} ->
+	    Value;
+	_ ->
+	    Value = ValueFun(),
+	    insert(Key, Value),
+	    Value
+    end.
 
 insert(Key, Value) ->
     case sc_store:lookup(Key) of
