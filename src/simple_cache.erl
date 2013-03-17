@@ -1,6 +1,6 @@
 -module(simple_cache).
 
--export([insert/2, lookup/1, delete/1, lookup_or_insert/2]).
+-export([insert/2, lookup/1, delete/1, lookup_or_insert/2, search/1, delete_pattern/1]).
 
 lookup_or_insert(Key, ValueFun) ->
     case lookup(Key) of 
@@ -34,6 +34,7 @@ lookup(Key) ->
             {error, not_found}
     end.
 
+
 delete(Key) ->
     sc_event:delete(Key),
     case sc_store:lookup(Key) of
@@ -42,3 +43,13 @@ delete(Key) ->
         {error, _Reason} ->
             ok
     end.
+
+search(Pattern) ->
+    sc_store:search(Pattern).
+
+delete_pattern(Pattern) ->
+    Pids = search(Pattern),
+    lists:foreach(fun(Pid) ->
+			  sc_element:delete(Pid)
+		  end, Pids),
+    length(Pids).

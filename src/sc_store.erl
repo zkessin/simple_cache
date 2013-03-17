@@ -4,7 +4,8 @@
          init/0,
          insert/2,
          delete/1,
-         lookup/1
+         lookup/1, 
+	 search/1
         ]).
 
 -define(TABLE_ID, ?MODULE).
@@ -20,7 +21,9 @@ init() ->
     dynamic_db_init(lists:delete(node(), CacheNodes)).
 
 insert(Key, Pid) ->
-    mnesia:dirty_write(#key_to_pid{key = Key, pid = Pid}).
+    Records = mnesia:dirty_write(#key_to_pid{key = Key, pid = Pid}).
+
+	  
 
 lookup(Key) ->
     case mnesia:dirty_read(key_to_pid, Key) of
@@ -32,6 +35,10 @@ lookup(Key) ->
         [] ->
 	    {error, not_found}
     end.
+
+search(Pattern) ->
+    Records = mnesia:dirty_match_object(key_to_pid, {'_',Pattern,'_'}),
+    [Pid ||#key_to_pid{pid = Pid} <- Records].
 
 delete(Pid) ->
     case mnesia:dirty_index_read(key_to_pid, Pid, #key_to_pid.pid) of
