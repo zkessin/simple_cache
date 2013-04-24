@@ -12,6 +12,15 @@
 -define(WAIT_FOR_TABLES, 5000).
 
 -record(key_to_pid, {key, pid}).
+get_env(AppName, Key, Default) ->
+    case application:get_env(AppName, Key) of
+        undefined   -> Default;
+        {ok, Value} -> Value
+    end.
+
+get_cache_state() ->
+    CacheState = get_env(simple_cache, cache_state, on),
+    CacheState.
 
 init() ->
     mnesia:stop(),
@@ -20,19 +29,31 @@ init() ->
     {ok, CacheNodes} = resource_discovery:fetch_resources(simple_cache),
     dynamic_db_init(lists:delete(node(), CacheNodes)).
 
-insert(Key, Pid) ->
-    Records = mnesia:dirty_write(#key_to_pid{key = Key, pid = Pid}).
-
+insert(Key, Pid) ->    
+    CacheState = get_cache_state(),
+    case CacheState of 
+	on ->
+	    Records = mnesia:dirty_write(#key_to_pid{key = Key, pid = Pid}),
+	    Records;
+	off ->
+	    []
+    end.
 	  
 
 lookup(Key) ->
-    case mnesia:dirty_read(key_to_pid, Key) of
-        [{key_to_pid, Key, Pid}] ->
-	    case is_pid_alive(Pid) of
-		true -> {ok, Pid};
-		false -> {error, not_found}
+    CacheState = get_cache_state(),
+    case CacheState of 
+	on ->
+	    case  mnesia:dirty_read(key_to_pid, Key) of
+		[{key_to_pid, Key, Pid}] ->
+		    case is_pid_alive(Pid) of
+			true -> {ok, Pid};
+			false -> {error, not_found}
+		    end;
+		[] ->
+		    {error, not_found}
 	    end;
-        [] ->
+	off ->
 	    {error, not_found}
     end.
 
