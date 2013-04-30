@@ -1,6 +1,6 @@
 -module(simple_cache).
 
--export([insert/2, lookup/1, delete/1, lookup_or_insert/2, search/1, delete_pattern/1]).
+-export([insert/2, lookup/1, delete/1, lookup_or_insert/2, search/1, delete_pattern/1, lookup/2]).
 
 lookup_or_insert(Key, ValueFun) ->
     case lookup(Key) of 
@@ -22,6 +22,9 @@ insert(Key, Value) ->
             sc_store:insert(Key, Pid),
             sc_event:create(Key, Value)
     end.
+
+lookup(Key, ValueFun) ->
+    lookup_or_insert(Key, ValueFun).
 
 lookup(Key) ->
     sc_event:lookup(Key),
