@@ -25,15 +25,16 @@ stop(_State) ->
     ok.
 
 ensure_contact() ->
-    DefaultNodes = ['contact1@localhost', 'contact2@localhost'],
+    DefaultNodes = [node()],
     case get_env(simple_cache, contact_nodes, DefaultNodes) of
         [] ->
-            {error, no_contact_nodes};
+            ensure_contact([node()]);
         ContactNodes ->
             ensure_contact(ContactNodes)
     end.
 
 ensure_contact(ContactNodes) ->
+    
     Answering = [N || N <- ContactNodes, net_adm:ping(N) =:= pong],
     case Answering of
         [] ->
